@@ -23,7 +23,11 @@ import racecar_utils as rc_utils
 rc = racecar_core.create_racecar()
 
 # Put any global variables here
-
+counter = 0
+isA = False
+isB = False
+isX = False
+isY = False
 ########################################################################################
 # Functions
 ########################################################################################
@@ -33,11 +37,22 @@ def start():
     """
     This function is run once every time the start button is pressed
     """
-    # Begin at a full stop
+ # If we use a global variable in our function, we must list it at
+    # the beginning of our function like this
+    global counter
+    global isA
+    global isB
+    global isX
+    global isY
+    # The start function is a great place to give initial values to global variables
+    counter = 0
+    isA = False
+    isB = False
+    isX = False
+    isY = False
+    # This tells the car to begin at a standstill
     rc.drive.stop()
 
-    # Print start message
-    # TODO (main challenge): add a line explaining what the Y button does
     print(
         ">> Lab 1 - Driving in Shapes\n"
         "\n"
@@ -52,23 +67,112 @@ def start():
 
 
 def update():
-    """
-    After start() is run, this function is run every frame until the back button
-    is pressed
-    """
-    # TODO (warmup): Implement acceleration and steering
-    rc.drive.set_speed_angle(0, 0)
 
+
+    global counter
+    global isA
+    global isB
+    global isX
+    global isY
+    # This prints a message every time the A button is pressed on the controller
+   
+    # Reset the counter and start driving in an L every time the B button is pressed on
+    # the controller
     if rc.controller.was_pressed(rc.controller.Button.A):
         print("Driving in a circle...")
-        # TODO (main challenge): Drive in a circle
+        counter = 0
+        isA = True
 
-    # TODO (main challenge): Drive in a square when the B button is pressed
+    if isA:
+        counter += rc.get_delta_time()
+        if counter < 6.4:
+            rc.drive.set_speed_angle(1, 1)
+        elif counter < 6.5:
+            rc.drive.set_speed_angle(0.3, 1)    
+        elif counter < 6.6:
+            rc.drive.set_speed_angle(-0.1, 1)        
+        else:
+            rc.drive.stop()
+            isA = False
 
-    # TODO (main challenge): Drive in a figure eight when the X button is pressed
 
-    # TODO (main challenge): Drive in a shape of your choice when the Y button
-    # is pressed
+    if rc.controller.was_pressed(rc.controller.Button.B):
+        print("Driving in a square...")
+        counter = 0
+        isB = True
+
+    if isB:
+        counter += rc.get_delta_time()
+        turntime = 1.38
+        straighttime = 1 
+        if counter < straighttime:
+            rc.drive.set_speed_angle(1, 0)    
+
+        elif counter < straighttime + turntime:
+            rc.drive.set_speed_angle(1, 1)
+        elif counter < straighttime + turntime + straighttime :
+            rc.drive.set_speed_angle(1, 0)    
+
+        elif counter < straighttime + turntime + straighttime + turntime :
+            rc.drive.set_speed_angle(1, 1)   
+    
+        elif counter < straighttime + turntime + straighttime + turntime +straighttime :
+            rc.drive.set_speed_angle(1, 0)    
+    
+        elif counter < straighttime + turntime + straighttime + turntime + straighttime + turntime :
+            rc.drive.set_speed_angle(1, 1)    
+        elif counter < straighttime + turntime + straighttime + turntime + straighttime + turntime + straighttime :
+            rc.drive.set_speed_angle(1, 0)
+        elif counter <  straighttime + turntime + straighttime + turntime + straighttime + turntime + straighttime + turntime :
+            rc.drive.set_speed_angle(1, 1)    
+        elif counter <  straighttime + turntime + straighttime + turntime + straighttime + turntime + straighttime + turntime + straighttime:
+            rc.drive.set_speed_angle(1, 0)                  
+        else:
+            # Otherwise, stop the car
+            rc.drive.stop()
+            isB = False
+
+    if rc.controller.was_pressed(rc.controller.Button.X ):
+        print("Driving in a figure eight...")
+        counter = 0
+        isX = True
+
+    if isX:
+        counter += rc.get_delta_time()
+        if counter < 3:
+            rc.drive.set_speed_angle(1, 1)
+        elif counter < 5:
+            rc.drive.set_speed_angle(1, 0)
+        elif counter < 8.2:
+            rc.drive.set_speed_angle(1, -1)
+        elif counter < 10:
+            rc.drive.set_speed_angle(1, 0)
+        elif counter < 12:
+            rc.drive.set_speed_angle(1, 1)    
+        else:
+            # Otherwise, stop the car
+            rc.drive.stop()
+            isX = False
+
+    if rc.controller.was_pressed(rc.controller.Button.Y ):
+        print("Driving in a myshape...")
+        counter = 0
+        isY = True
+
+    if isY:
+        counter += rc.get_delta_time()
+        if counter < 1:
+            rc.drive.set_speed_angle(1, 1)
+        elif counter < 4:
+            rc.drive.set_speed_angle(1, -1)
+        elif counter < 5:
+            rc.drive.set_speed_angle(0.5, 0.5)    
+        elif counter < 8.5:
+            rc.drive.set_speed_angle(-1, -1)        
+        else:
+            # Otherwise, stop the car
+            rc.drive.stop()
+            isY = False
 
 
 ########################################################################################

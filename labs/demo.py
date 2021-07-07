@@ -54,30 +54,58 @@ def update():
     global isDriving
 
     # This prints a message every time the A button is pressed on the controller
-    if rc.controller.was_pressed(rc.controller.Button.A):
-      print("The A button was pressed")
-
+   
     # Reset the counter and start driving in an L every time the B button is pressed on
     # the controller
-    if rc.controller.was_pressed(rc.controller.Button.B):
+    if rc.controller.was_pressed(rc.controller.Button.A):
+      print("Driving in a circle...")
       counter = 0
       isDriving = True
-
     if isDriving:
-      # rc.get_delta_time() gives the time in seconds since the last time
-      # the update function was called
       counter += rc.get_delta_time()
+      if counter < 0.5:
+          rc.drive.set_speed_angle(1, 0)    
 
-      if counter < 1:
-        # Drive forward at full speed for one second
-        rc.drive.set_speed_angle(1, 0)
       elif counter < 2:
-        # Turn left at full speed for the next second
-        rc.drive.set_speed_angle(1, 1)
+          rc.drive.set_speed_angle(1, 1)
+      elif counter < 2.5:
+          rc.drive.set_speed_angle(1, 0)    
+
+      elif counter < 4:
+          rc.drive.set_speed_angle(1, 1)    
+      elif counter < 4.5:
+          rc.drive.set_speed_angle(1, 0)     
+      elif counter < 6:
+          rc.drive.set_speed_angle(1, 1)    
+      elif counter < 6.5:
+          rc.drive.set_speed_angle(1, 0)
+      elif counter < 8:
+          rc.drive.set_speed_angle(1, 1)    
+      elif counter < 8.5:
+          rc.drive.set_speed_angle(1, 0)                  
       else:
         # Otherwise, stop the car
         rc.drive.stop()
         isDriving = False
+
+
+    if rc.controller.was_pressed(rc.controller.Button.B):
+      print("Driving in a square...")
+      counter = 0
+      isDriving = True
+      if isDriving:
+        counter += rc.get_delta_time()
+        if counter < 1:
+          rc.drive.set_speed_angle(1, 0)
+        if counter < 2:
+          rc.drive.set_speed_angle(0, 1)
+        if counter < 3:
+          rc.drive.set_speed_angle(1, 0) 
+        if counter < 3:
+          rc.drive.set_speed_angle(0, 1)    
+        else:
+          rc.drive.stop()
+          isDriving = False
 
 # update_slow() is similar to update() but is called once per second by default.
 # It is especially useful for printing debug messages, since printing a message
