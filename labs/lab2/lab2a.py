@@ -13,7 +13,7 @@ Lab 2A - Color Image Line Following
 import sys
 import cv2 as cv
 import numpy as np
-
+import math
 sys.path.insert(1, "../../library")
 import racecar_core
 import racecar_utils as rc_utils
@@ -32,9 +32,11 @@ MIN_CONTOUR_AREA = 30
 CROP_FLOOR = ((360, 0), (rc.camera.get_height(), rc.camera.get_width()))
 
 # Colors, stored as a pair (hsv_min, hsv_max)
-BLUE = ((90, 50, 50), (120, 255, 255))  # The HSV range for the color blue
-# TODO (challenge 1): add HSV ranges for other colors
+BLUE = ((88,245, 199), (108, 255, 255))  # The HSV range for the color blue
 
+# TODO (challenge 1): add HSV ranges for other colors
+GREEN = ((35,43,46),(77,255,255))
+RED = ((0,245,212),(10,255,255)) 
 # >> Variables
 speed = 0.0  # The current speed of the car
 angle = 0.0  # The current angle of the car's wheels
@@ -68,6 +70,19 @@ def update_contour():
 
         # Find all of the blue contours
         contours = rc_utils.find_contours(image, BLUE[0], BLUE[1])
+        print("blue")
+        if len(contours) == 0:
+            contours = rc_utils.find_contours(image, GREEN[0], GREEN[1])
+            print("green")
+            print(contours)
+        elif len(contours) == 0:
+            contours = rc_utils.find_contours(image, RED[0], RED[1])
+            print("red")
+
+        colors = [BLUE, GREEN, RED]
+
+        for x in colors:
+            contours = rc_utils.find_contours(image, colors[x][0], colors[x][0])
 
         # Select the largest contour
         contour = rc_utils.get_largest_contour(contours, MIN_CONTOUR_AREA)
@@ -80,6 +95,7 @@ def update_contour():
             # Draw contour onto the image
             rc_utils.draw_contour(image, contour)
             rc_utils.draw_circle(image, contour_center)
+            print()
 
         else:
             contour_center = None
@@ -134,10 +150,10 @@ def update():
     if contour_center is not None:
         # Current implementation: bang-bang control (very choppy)
         # TODO (warmup): Implement a smoother way to follow the line
-        if contour_center[1] < rc.camera.get_width() / 2:
-            angle = -1
-        else:
-            angle = 1
+        
+        # angle1 = (rc.camera.get_width() / 2 - contour_center[1])
+        
+        angle = rc_utils.remap_range(contour_center[1],0,rc.camera.get_width(),-1,1)
 
     # Use the triggers to control the car's speed
     forwardSpeed = rc.controller.get_trigger(rc.controller.Trigger.RIGHT)
