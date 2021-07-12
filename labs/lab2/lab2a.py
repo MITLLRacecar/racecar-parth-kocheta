@@ -2,7 +2,6 @@
 Copyright MIT and Harvey Mudd College
 MIT License
 Summer 2020
-
 Lab 2A - Color Image Line Following
 """
 
@@ -13,7 +12,7 @@ Lab 2A - Color Image Line Following
 import sys
 import cv2 as cv
 import numpy as np
-import math
+
 sys.path.insert(1, "../../library")
 import racecar_core
 import racecar_utils as rc_utils
@@ -32,11 +31,11 @@ MIN_CONTOUR_AREA = 30
 CROP_FLOOR = ((360, 0), (rc.camera.get_height(), rc.camera.get_width()))
 
 # Colors, stored as a pair (hsv_min, hsv_max)
-BLUE = ((88,245, 199), (108, 255, 255))  # The HSV range for the color blue
-
+BLUE = ((88,245,199), (108,255,255))  # The HSV range for the color blue
 # TODO (challenge 1): add HSV ranges for other colors
 GREEN = ((35,43,46),(77,255,255))
-RED = ((0,245,212),(10,255,255)) 
+RED = ((0,245,212),(10,255,255))
+
 # >> Variables
 speed = 0.0  # The current speed of the car
 angle = 0.0  # The current angle of the car's wheels
@@ -69,20 +68,13 @@ def update_contour():
         image = rc_utils.crop(image, CROP_FLOOR[0], CROP_FLOOR[1])
 
         # Find all of the blue contours
-        contours = rc_utils.find_contours(image, BLUE[0], BLUE[1])
-        print("blue")
-        if len(contours) == 0:
-            contours = rc_utils.find_contours(image, GREEN[0], GREEN[1])
-            print("green")
-            print(contours)
-        elif len(contours) == 0:
-            contours = rc_utils.find_contours(image, RED[0], RED[1])
-            print("red")
 
-        colors = [BLUE, GREEN, RED]
+        color = (BLUE,GREEN,RED)
 
-        for x in colors:
-            contours = rc_utils.find_contours(image, colors[x][0], colors[x][0])
+        for x in color:
+            contours = rc_utils.find_contours(image, x[0], x[1])
+            if len(contours) != 0:
+                break
 
         # Select the largest contour
         contour = rc_utils.get_largest_contour(contours, MIN_CONTOUR_AREA)
@@ -95,7 +87,6 @@ def update_contour():
             # Draw contour onto the image
             rc_utils.draw_contour(image, contour)
             rc_utils.draw_circle(image, contour_center)
-            print()
 
         else:
             contour_center = None
@@ -146,21 +137,18 @@ def update():
     update_contour()
 
     # Choose an angle based on contour_center
-    # If we could not find a contour, keep the previous angle
+
+    imgX = rc.camera.get_width()
+    
     if contour_center is not None:
-        # Current implementation: bang-bang control (very choppy)
-        # TODO (warmup): Implement a smoother way to follow the line
-        
-        # angle1 = (rc.camera.get_width() / 2 - contour_center[1])
-        
-        angle = rc_utils.remap_range(contour_center[1],0,rc.camera.get_width(),-1,1)
+        angle = rc_utils.remap_range(contour_center[1],0,imgX,-1,1)
 
     # Use the triggers to control the car's speed
     forwardSpeed = rc.controller.get_trigger(rc.controller.Trigger.RIGHT)
     backSpeed = rc.controller.get_trigger(rc.controller.Trigger.LEFT)
     speed = forwardSpeed - backSpeed
 
-    rc.drive.set_speed_angle(speed, angle)
+    rc.drive.set_speed_angle(1, angle)
 
     # Print the current speed and angle when the A button is held down
     if rc.controller.is_down(rc.controller.Button.A):

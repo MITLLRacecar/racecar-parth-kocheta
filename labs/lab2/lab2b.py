@@ -2,7 +2,6 @@
 Copyright MIT and Harvey Mudd College
 MIT License
 Summer 2020
-
 Lab 2B - Color Image Cone Parking
 """
 
@@ -13,6 +12,7 @@ Lab 2B - Color Image Cone Parking
 import sys
 import cv2 as cv
 import numpy as np
+from enum import IntEnum
 
 sys.path.insert(1, "../../library")
 import racecar_core
@@ -40,7 +40,13 @@ contour_area = 0  # The area of contour
 ########################################################################################
 # Functions
 ########################################################################################
+class State(IntEnum):
+    search = 0
+    obstacle = 1
+    approach = 2
+    stop = 3
 
+curState = State.search
 
 def update_contour():
     """
@@ -99,7 +105,6 @@ def start():
     # Print start message
     print(">> Lab 2B - Color Image Cone Parking")
 
-
 def update():
     """
     After start() is run, this function is run every frame until the back button
@@ -107,11 +112,45 @@ def update():
     """
     global speed
     global angle
-
+    global curState
     # Search for contours in the current color image
     update_contour()
 
+    imgX = rc.camera.get_width()
+
+    if contour_center is not None:
+        angle = rc_utils.remap_range(contour_center[1],0,imgX,-1,1)
+
     # TODO: Park the car 30 cm away from the closest orange cone
+    if curState == State.search:
+        rc.drive.set_speed_angle(0.5, 1)
+        
+        if contour_center is not None:
+            curState = State.approach
+
+            
+    # elif curState == State.obstacle:
+
+    elif curState == State.approach:
+       # rc.drive.set_speed_angle(0.5, angle)
+
+        if contour_area < 3110:
+            rc.drive.set_speed_angle(0.35,angle)
+        elif contour_area >= 3110 and contour_area < 17670 :
+           rc.drive.set_speed_angle(0.2,angle)
+        elif contour_area >= 17670 and contour_area < 25000:
+            rc.drive.set_speed_angle(0.01,angle)
+        elif contour_area > 26450:
+            curState = State.stop
+            print("stop")
+
+    elif curState == State.stop:
+        rc.drive.set_speed_angle(0,0)
+
+    
+    # 101m = 3110 pixels
+    # 30m = 27353 pixels
+    # 40m = 17670 pixels
 
     # Print the current speed and angle when the A button is held down
     if rc.controller.is_down(rc.controller.Button.A):
