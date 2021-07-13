@@ -637,8 +637,8 @@ def get_depth_image_center_distance(
     # Use get_average_distance to average the distance around this center pixel
     return get_pixel_average_distance(depth_image, center_coords, kernel_size)
 
-def get_depth_image_top_distance(
-    depth_image: NDArray[(Any, Any), np.float32], kernel_size: int = 5
+def get_depth_image_left_distance(
+    depth_image: NDArray[(Any, Any), np.float32], img_x: int = 0, img_y: int = 0, kernel_size: int = 5
     ) -> float:
   
     assert (
@@ -646,13 +646,13 @@ def get_depth_image_top_distance(
     ), f"kernel_size ({kernel_size}) must positive and odd."
 
     # Calculate the center pixel
-    center_coords = (depth_image.shape[0] * 5 // 6 , depth_image.shape[1] // 2)
+    center_coords = (img_y // 2, img_x // 4)
 
     # Use get_average_distance to average the distance around this center pixel
     return get_pixel_average_distance(depth_image, center_coords, kernel_size)
 
-def get_depth_image_bottom_distance(
-    depth_image: NDArray[(Any, Any), np.float32], kernel_size: int = 5
+def get_depth_image_right_distance(
+    depth_image: NDArray[(Any, Any), np.float32], img_x: int = 0, img_y: int = 0, kernel_size: int = 5
     ) -> float:
   
     assert (
@@ -660,7 +660,7 @@ def get_depth_image_bottom_distance(
     ), f"kernel_size ({kernel_size}) must positive and odd."
 
     # Calculate the center pixel
-    center_coords = (depth_image.shape[0]  // 6 , depth_image.shape[1] // 2)
+    center_coords = (img_y // 2, img_x * 3 // 4)
 
     # Use get_average_distance to average the distance around this center pixel
     return get_pixel_average_distance(depth_image, center_coords, kernel_size)

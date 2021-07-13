@@ -133,18 +133,19 @@ def update():
 
     # Search for contours in the current color image
     update_contour()
-
+    print(curState)
     imgX = rc.camera.get_width()
 
     if contour_center is not None:
         angle = rc_utils.remap_range(contour_center[1],0,imgX,-1,1)
     
-    if contour_center is  None:
-        curState == State.search
 
+    if contour_center is None:
+        curState == State.search
+        angle = 1
     if curState == State.search:
         angle = 1
-        speed = 1
+        speed = 0.2
         if contour_center is not None:
             curState = State.approach
 
@@ -171,9 +172,8 @@ def update():
     
     if curState == State.approach:
         if distance < 29:
-            angle = 0
             speed = rc_utils.remap_range(distance, 0, 30, -1, 0)
-          
+            print("backing")
 
         elif distance < 30:
             speed = 0
