@@ -49,7 +49,7 @@ def update():
     """
     color_image = rc.camera.get_color_image()
     markers = rc_utils.get_ar_markers(color_image)
-
+        
     # TODO: Turn left if we see a marker with ID 0 and right for ID 1
 
     # TODO: If we see a marker with ID 199, turn left if the marker faces left and right

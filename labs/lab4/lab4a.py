@@ -23,7 +23,8 @@ import racecar_utils as rc_utils
 ########################################################################################
 
 rc = racecar_core.create_racecar()
-
+prev_forward  = 0
+real_speed =0
 # >> Constants
 # The (min, max) degrees to consider when measuring forward and rear distances
 FRONT_WINDOW = (-10, 10)
@@ -41,6 +42,8 @@ def start():
     # Have the car begin at a stop
     rc.drive.stop()
 
+    global prev_forward
+    global real_speed
     # Print start message
     print(
         ">> Lab 4A - LIDAR Safety Stop\n"
@@ -61,19 +64,52 @@ def update():
     After start() is run, this function is run every frame until the back button
     is pressed
     """
+    global prev_forward
+    global real_speed
     # Use the triggers to control the car's speed
     rt = rc.controller.get_trigger(rc.controller.Trigger.RIGHT)
     lt = rc.controller.get_trigger(rc.controller.Trigger.LEFT)
+    
     speed = rt - lt
-
     # Calculate the distance in front of and behind the car
     scan = rc.lidar.get_samples()
     _, forward_dist = rc_utils.get_lidar_closest_point(scan, FRONT_WINDOW)
     _, back_dist = rc_utils.get_lidar_closest_point(scan, REAR_WINDOW)
 
+    """
+    speed: float
+    frame_speed = (prev_forward - forward_dist) / rc.get_delta_time()
+    real_speed += (frame_speed - real_speed)
+
+    prev_forward = forward_dist
     # TODO (warmup): Prevent the car from hitting things in front or behind it.
     # Allow the user to override safety stop by holding the left or right bumper.
+    min_stop = 30 
+    stop_point = min_stop + real_speed
+    slow_point = 2 * stop_point
+    if stop_point < forward_dist < slow_point:
+        if not rc.controller.is_down(rc.controller.Button.RB):
+                speed = rc_utils.remap_range(forward_dist, stop_point, slow_point, 0, 0.5)
+           
 
+    if  back_dist < stop_point:
+    """
+
+    if 100 <= forward_dist <= 150 and not rc.controller.is_down(rc.controller.Button.RB) :
+        speed = rc_utils.clamp(speed, 0, 0.1)
+    elif (forward_dist < 100 ) and not rc.controller.is_down(rc.controller.Button.RB):
+        speed = 0
+
+        
+
+    if 100 <= back_dist <= 150 and not rc.controller.is_down(rc.controller.Button.RB) :
+        speed = rc_utils.clamp(speed, 0, -0.1)
+        
+    elif back_dist < 100 and not rc.controller.is_down(rc.controller.Button.RB):
+        speed = 0
+    
+    
+    
     # Use the left joystick to control the angle of the front wheels
     angle = rc.controller.get_joystick(rc.controller.Joystick.LEFT)[0]
 
@@ -84,8 +120,8 @@ def update():
         print("Speed:", speed, "Angle:", angle)
 
     # Print the distance of the closest object in front of and behind the car
-    if rc.controller.is_down(rc.controller.Button.B):
-        print("Forward distance:", forward_dist, "Back distance:", back_dist)
+    
+    print("Forward distance:", forward_dist, "Back distance:", back_dist)
 
     # Display the current LIDAR scan
     rc.display.show_lidar(scan)

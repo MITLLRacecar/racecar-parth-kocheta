@@ -5,6 +5,9 @@ Summer 2020
 Phase 1 Challenge - Cone Slaloming
 """
 
+
+#22 was fastest time with max 1 speed
+
 ########################################################################################
 # Imports
 ########################################################################################
@@ -178,7 +181,8 @@ def update():
     speed = 0.0
     angle = 0.0
     time += rc.get_delta_time()
-
+    
+    
     color_img_x = rc.camera.get_width()
 
     if prev_color != cur_color:
@@ -187,13 +191,13 @@ def update():
 
     if cone_counter == 12:
         angle = -1
-  
+        speed = 0.2
     elif cone_counter == 11 and contour_distance > 130:
         angle = 0.3
-     
-    elif cone_counter > 12 and contour_distance > 130:
+        speed = 0.4
+    elif cone_counter == 13 and contour_distance > 130 :
         angle = 0.3
-       
+        speed = 2
 
     else:
         if cur_color == 'BLUE':
@@ -201,26 +205,30 @@ def update():
             if contour_center is not None:
                 point = rc_utils.remap_range(contour_distance, 10, 300, color_img_x, color_img_x * 3 //4 , True)
                 #speed = rc_utils.remap_range(contour_distance,30, 120,0.8,1,True,)
-             
-                angle = rc_utils.remap_range(contour_center[1], point, color_img_x // 2 , 0 ,-0.62 ,True)
-                if contour_distance > 175:
+                speed = 1.4
+                angle = rc_utils.remap_range(contour_center[1], point, color_img_x // 2 , 0 ,-1 ,True)
+                if contour_distance > 145:
                     angle = -0.16
+                    speed = 1.4
             else:
-                angle = 0.3
+                angle = 0.33
+                speed = 1.4
                
         
         elif cur_color == 'RED':
             if contour_center is not None:
                 point = rc_utils.remap_range(contour_distance, 50, 300, 0, color_img_x // 2, True)
                 #speed = rc_utils.remap_range(contour_distance,30, 120,0.7,1,True,)
-               
-                angle = rc_utils.remap_range(contour_center[1], point, color_img_x //2 , 0 ,0.62 ,True)
-                if contour_distance > 175:
+                speed = 1.4
+                angle = rc_utils.remap_range(contour_center[1], point, color_img_x //2 , 0 ,1 ,True)
+                if contour_distance > 145:
                     angle = 0.16
+                    speed = 1.4
             else:
-                angle = -0.3
+                angle = -0.33
+                speed = 1.4
                
-    speed = 1
+    
     print(angle)
     #print(time)
 
