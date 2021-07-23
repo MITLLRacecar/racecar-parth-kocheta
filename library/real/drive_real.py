@@ -44,12 +44,12 @@ class DriveReal(Drive):
             -1.0 <= speed <= 2.0
         ), f"speed [{speed}] must be between -1.0 and 1.0 inclusive."
         assert (
-            -1.0 <= angle <= 2.0
+            -2.0 <= angle <= 2.0
         ), f"angle [{angle}] must be between -1.0 and 1.0 inclusive."
 
         self.__message.drive.speed = rc_utils.remap_range(
             speed * self.__max_speed,
-            -1.0,
+            -2.0,
             2.0,
             self.__PWM_SPEED_MIN,
             self.__PWM_SPEED_MAX,
@@ -57,7 +57,7 @@ class DriveReal(Drive):
 
         angle = -angle
         self.__message.drive.steering_angle = rc_utils.remap_range(
-            angle, -1.0, 1.0, self.__PWM_TURN_LEFT, self.__PWM_TURN_RIGHT,
+            angle, -2.0, 2.0, self.__PWM_TURN_LEFT, self.__PWM_TURN_RIGHT,
         )
 
     def set_max_speed(self, max_speed: float = 0.25) -> None:

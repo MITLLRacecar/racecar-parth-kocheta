@@ -9,10 +9,10 @@ class DriveSim(Drive):
 
     def set_speed_angle(self, speed: float, angle: float) -> None:
         assert (
-            -1.0 <= speed <= 2.0
+            -2.0 <= speed <= 2.0
         ), f"speed [{speed}] must be between -1.0 and 1.0 inclusive."
         assert (
-            -1.0 <= angle <= 2.0
+            -2.0 <= angle <= 2.0
         ), f"angle [{angle}] must be between -1.0 and 1.0 inclusive."
 
         self.__racecar._RacecarSim__send_data(

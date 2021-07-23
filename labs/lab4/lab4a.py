@@ -105,7 +105,7 @@ def update():
     if 100 <= back_dist <= 150 and not rc.controller.is_down(rc.controller.Button.RB) :
         speed = rc_utils.clamp(speed, 0, -0.1)
         
-    elif back_dist < 100 and not rc.controller.is_down(rc.controller.Button.RB):
+    elif back_dist > 100 and not rc.controller.is_down(rc.controller.Button.RB):
         speed = 0
     
     
