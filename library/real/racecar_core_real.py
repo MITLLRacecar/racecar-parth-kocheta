@@ -198,7 +198,7 @@ class RacecarReal(Racecar):
             Left joystick: Turn left and right
             A button: Print "Kachow!" to the terminal
         """
-        MAX_SPEED = 2.0  # The speed when the trigger is fully pressed
+        MAX_SPEED = 3.0  # The speed when the trigger is fully pressed
         MAX_ANGLE = 2.0  # The angle when the joystick is fully moved
 
         forwardSpeed = self.controller.get_trigger(self.controller.Trigger.RIGHT)

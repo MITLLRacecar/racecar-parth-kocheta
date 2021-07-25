@@ -41,7 +41,7 @@ class DriveReal(Drive):
 
     def set_speed_angle(self, speed: float, angle: float) -> None:
         assert (
-            -1.0 <= speed <= 2.0
+            -3.0 <= speed <= 3.0
         ), f"speed [{speed}] must be between -1.0 and 1.0 inclusive."
         assert (
             -2.0 <= angle <= 2.0
@@ -62,7 +62,7 @@ class DriveReal(Drive):
 
     def set_max_speed(self, max_speed: float = 0.25) -> None:
         assert (
-            0.0 <= max_speed <= 1.0
+            0.0 <= max_speed <= 3.0
         ), f"max_speed [{max_speed}] must be between 0.0 and 1.0 inclusive."
 
         self.__max_speed_scale_factor = max_speed

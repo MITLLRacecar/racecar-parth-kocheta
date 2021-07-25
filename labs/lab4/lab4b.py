@@ -12,6 +12,7 @@ Lab 4B - LIDAR Wall Following
 import sys
 import cv2 as cv
 import numpy as np
+from simple_pid import PID
 
 sys.path.insert(0, "../../library")
 import racecar_core
@@ -47,6 +48,7 @@ def start():
     global speed
     global angle
     # Print start message
+    
     print(">> Lab 4B - LIDAR Wall Following")
 
 
@@ -60,67 +62,31 @@ def update():
     global angle 
     # TODO: Follow the wall to the right of the car without hitting anything.
     scan = rc.lidar.get_samples()
+    pid = PID(0.015, 0.1, 0.05, setpoint=0)
+    pid.output_limits = (-1.7, 1.7)
     
-    
-    _, right_distance = rc_utils.get_lidar_closest_point(scan, (80,100))
-    _, left_distance = rc_utils.get_lidar_closest_point(scan, (260,280))
 
     forward_distance = rc_utils.get_lidar_average_distance(scan, 0 ,10)
-    top_right = rc_utils.get_lidar_average_distance(scan,45, 10 )
-    top_left =  rc_utils.get_lidar_average_distance(scan,315, 10 )
+    top_right = rc_utils.get_lidar_average_distance(scan,42, 10 )
+    top_left =  rc_utils.get_lidar_average_distance(scan,318, 10 )
+
     diff_top =  top_right -top_left 
-    #print(right_distance)
+    diff_top2 = top_left - top_right
+    control = pid(diff_top2)
 
-   # rc.display.show_lidar(scan, radius = 256, highlighted_samples = [right_distance, left_distance])
-    diff = right_distance - left_distance
+    speed = rc_utils.remap_range(forward_distance, 0, 250, 1, 2.1, True)
     
-    #angle = rc_utils.remap_range(diff, -20, 20, -0.4, 0.4, True)
+    angle  = rc_utils.clamp (control,-1.55,1.55)
     
-    #angle = dif * 0.05
-    
-    speed = rc_utils.remap_range(forward_distance, 0, 250, 1, 2, True)
-    
-    #angle  = rc_utils.clamp (diff_top * 0.008,-0.3,0.3)
-    angle  = rc_utils.clamp (diff_top * 0.03,-1.5,1.5)
+    #angle  = rc_utils.clamp (diff_top * 0.02,-1.6,1.6)
 
-    """
-    if cur_state == State.forward:
-         if (forward_distance < 125 ):
-             cur_state = State.turn
-    if cur_state == State.turn:
-         top_right = rc_utils.get_lidar_average_distance(scan,45, 5 )
-         top_left =  rc_utils.get_lidar_average_distance(scan,315, 5 )
-         if (top_left - top_right > 30):    
-              angle = rc_utils.remap_range(top_left, 0, 100, 0, -1.7, True)
-         elif (top_right -  top_left > 30):
-              angle = rc_utils.remap_range(top_right, 0, 100, 0, 1.7, True)
-         else:
-             cur_state = State.forward
-    """
-    print (forward_distance)
-    #print(cur_state)
+    if (abs(angle) < 0.05):
+        angle = 0 
 
     rc.drive.set_speed_angle(speed,angle)    
 
 
 
-
-
-
-        #   angle = rc_utils.remap_range(top_left, 0, 80, 1, -1, True)
-            
-        #if forward_distance > 115:
-        #    cur_state = State.forward
-   
-    #print(left_distance)
-
-        #if forward_distance < 20 and left_distance < 30: # sharp turn right
-        
-    # if left_distance or right_distance is < too_close:
-    #     #turn right /left by a certain amount
-    # else:
-    #     #forward
-    #     pass
 
 
 ########################################################################################
