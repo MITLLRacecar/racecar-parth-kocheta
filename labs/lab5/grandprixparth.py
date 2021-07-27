@@ -58,6 +58,12 @@ linefollow = False
 order = (GREEN, RED, BLUE)
 turnright= False
 turnleft = False
+
+firstLoop = True
+firstTurn = True
+cur_side = "START"
+
+straight = False
 ########################################################################################
 # Functions
 ########################################################################################
@@ -88,77 +94,30 @@ def update():
     is pressed
     """
 
-    global speed, angle, linefollow, wallfollow, counter, turnleft, turnright
-
-    if linefollow == True:
-        followLine()
-    elif wallfollow == True:
+    global speed, angle, wallfollow, counter, turnleft, turnright, firstLoop, firstTurn, cur_side, straight
+    
+  
+    if wallfollow == True:
         followWall2()  
     if turnright == True:
         turn_right()
     elif turnleft == True:
         turn_left()
-    
+    elif straight == True:
+        straight()
     
     #print("angle" + str(angle))
     #print(counter)
-    
+    print(angle)
     rc.drive.set_speed_angle(speed, angle)
 
-
-def update_contour(order2):
-    """
-    Finds contours in the current color image and uses them to update contour_center
-    and contour_area
-    """
-    global contour_center
-    global contour_area
-    global order
-    image = rc.camera.get_color_image()
-
-    if image is None:
-        contour_center = None
-        contour_area = 0
-    else:
-
-        image = rc_utils.crop(image, CROP_FLOOR[0], CROP_FLOOR[1])
-        color = order2
-        for x in color:
-            contours = rc_utils.find_contours(image, x[0], x[1])
-            if len(contours) != 0:
-                break
-
-        contour = rc_utils.get_largest_contour(contours, MIN_CONTOUR_AREA)
-        if contour is not None:
-            contour_center = rc_utils.get_contour_center(contour)
-            contour_area = rc_utils.get_contour_area(contour)
-            rc_utils.draw_contour(image, contour)
-            rc_utils.draw_circle(image, contour_center)
-
-        else:
-            contour_center = None
-            contour_area = 0
-
-
-
-    
-def followLine():
-    global speed
-    global angle
-    global order
-    #print(order)
-    update_contour(order)
-    imgX = rc.camera.get_width()
-    if contour_center is not None:
-        angle = rc_utils.remap_range(contour_center[1],0,imgX,-1,1)
-    speed = 1
 
 def turn_right():
     global counter, angle, speed, wallfollow
 
-    if counter < 0.7:
+    if counter < 1.1:
         counter += rc.get_delta_time()
-        angle = 1
+        angle = 0.7
         speed = 1
     else:
         wallfollow = True
@@ -167,19 +126,30 @@ def turn_left():
     
     global counter, angle, wallfollow, speed
        
-    if counter < 0.7:
+    if counter < 1.1:
         counter += rc.get_delta_time()
-        angle = -1
+        angle = -0.7
         speed = 1
 
     else:
         wallfollow = True
 
     
+def straight():
+    global counter, angle, wallfollow, speed
+       
+    if counter < 1:
+        counter += rc.get_delta_time()
+        angle = 0
+        speed = 1
+
+    else:
+        wallfollow = True
+
 
 def followWall2():
     
-    global speed,angle, linefollow, wallfollow, counter, turnright, turnleft, order 
+    global speed,angle, linefollow, wallfollow, counter, turnright, turnleft, order, firstLoop, firstTurn, cur_side, straight
     scan = rc.lidar.get_samples()
     pid = PID(0.01, 0.1, 0.1, setpoint=0)
     pid.output_limits = (-1.5, 1.5)
@@ -194,7 +164,6 @@ def followWall2():
     if len(markers) > 0:
         marker = markers[0]
         
-    #use depth image and corners to find center and the distance to the marker, then make turn right and turn left functions wbhen distance to marker is less than number
     front_dist = rc_utils.get_lidar_average_distance(scan, 0 ,5)
     top_right = rc_utils.get_lidar_average_distance(scan,42, 10 )
     top_left =  rc_utils.get_lidar_average_distance(scan,318, 10 )
@@ -222,48 +191,74 @@ def followWall2():
     #angle  = rc_utils.clamp (diff_top * 0.02,-1.6,1.6)
     # if marker is not None:
     #print(marker)
-    print(front_dist)
-    if (marker is not None and marker.get_id() == 0 ):
-        if marker_distance < 80 :
-            print("calling left")
-            counter=  0
-            wallfollow = False
-            turnleft = True
-            angle = -1
-       
-    if (marker is not None and marker.get_id() == 1  ):
-        if marker_distance < 80 :
-            print("calling right")
-            counter=  0
-            wallfollow = False
-            turnright = True
-            angle = 1
+    
+    
 
-    if (marker is not None and marker.get_id() == 2 and marker_distance < 80):
-        marker.detect_colors(color_image, potential_colors)
-        #print(marker.get_color())
-        if marker.get_color() == 'RED':
-            print("changing order red")
-            order = (GREEN, RED, BLUE)
-        elif marker.get_color() == 'BLUE':
-            print("changing order blue")
-            order = (GREEN, BLUE, RED)
+    if (firstLoop):
+        if front_dist > 120:
+            speed = 1
+            angle = 0
+        else: 
+            firstLoop = False
         
-        wallfollow = False
-        linefollow = True
-    if (marker is not None and marker.get_id() == 199 ) :
+    elif (marker is not None and marker.get_id() == 199 ) :
         print(marker.get_orientation().value)
-        if  marker_distance < 80:
-            if marker.get_orientation().value == 1:
-                counter =  0
-                wallfollow = False  
-                turnleft = True 
+  
+        if marker.get_orientation().value == 1  :
+            cur_side = "LEFT" 
+        
+
+        elif marker.get_orientation().value ==3 :
+            cur_side = "RIGHT" 
+       
+
+    if firstTurn == True and front_dist < 100:
+
+        if marker is not None:
+            firstTurn = False
+            if marker.get_orientation().value == 1  :
+                    print("first turn left")
+                    counter =  0.7
+                    wallfollow = False  
+                    turnleft = True
+                    firstTurn = False
+                    
+                    #angle = -1
             elif marker.get_orientation().value ==3 :
-                counter=  0
-                wallfollow = False
-                turnright = True
+                    print("first turn right")
+                    counter=  0.7
+                    wallfollow = False
+                    turnright = True
+                    firstTurn = False
+                   
 
     
+    elif cur_side != "START" and firstTurn == False:
+        if marker is not None:
+            if cur_side == "LEFT" and marker.get_orientation().value == 1 :
+                print("going straight on left")
+                counter= 0 
+                wallfollow = False
+                straight = True
+                
+            elif cur_side == "LEFT" and marker.get_orientation().value == 3:
+                print("wide right turn")
+                counter=  0
+                wallfollow = False
+                turnright = True   
+            elif  cur_side == "RIGHT" and marker.get_orientation().value == 3:
+                print("going straight on right")
+                counter = 0
+                wallfollow = False
+                straight = True
+
+            elif cur_side == "RIGHT" and marker.get_orientation().value == 1:
+                print("wide left turn")
+                counter =  0
+                wallfollow = False  
+                turnleft = True
+
+    print(cur_side)
 ########################################################################################
 # DO NOT MODIFY: Register start and update and begin execution
 ########################################################################################

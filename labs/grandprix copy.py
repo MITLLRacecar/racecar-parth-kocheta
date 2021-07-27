@@ -3,7 +3,7 @@ Copyright MIT and Harvey Mudd College
 MIT License
 Summer 2020
 
-Lab 5 - AR Markers
+Grand Prix 2021
 """
 
 ########################################################################################
@@ -17,10 +17,11 @@ import cv2 as cv
 import numpy as np
 from simple_pid import PID
 sys.path.insert(0, "../../library")
+
 import racecar_core
 import racecar_utils as rc_utils
 from racecar_utils import ARMarker
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 
 ########################################################################################
@@ -29,47 +30,37 @@ from enum import Enum, IntEnum
 
 rc = racecar_core.create_racecar()
 
-# Add any global variables here
-global front_dist, finishedTurning
-potential_colors = [
-    ((90, 50, 50), (120, 255, 255), "BLUE"),
-    ((40, 50, 50), (80, 255, 255), "GREEN"),
-    ((170, 50, 50), (10, 255, 255), "RED")
-]
-
 ### LINE FOLLOWING ###
-BLUE = ((88,245,199), (108,255,255))
-RED = ((0, 50, 50), (20, 255, 255))#(175, 50, 50), (10, 255, 255))#
-GREEN = ((40, 60, 60), (90, 255, 255)) #(40, 50, 50), (80, 255, 255)
-WHITE = ((90, 20, 200), (115, 60, 255))
+BLUE = ((88,245,199), (108,255,255), "BLUE")
+RED = ((0, 50, 50), (20, 255, 255), "RED")
+GREEN = ((40, 60, 60), (90, 255, 255), "GREEN") 
+WHITE = ((90, 20, 200), (115, 60, 255), "WHITE")
+
 CROP_FLOOR = ((360, 0), (rc.camera.get_height(), rc.camera.get_width()))
+
+MIN_CONTOUR_AREA = 30
+
+potential_colors = [BLUE, RED, GREEN]
 
 speed = 0
 angle = 0
 
-MIN_CONTOUR_AREA = 30
-contour_center = None  # The (pixel row, pixel column) of contour
-contour_area = 0  # The area of contour
-counter = 0
-
-wallfollow = True
-linefollow = False
-
-order = (GREEN, RED, BLUE)
-turnright= False
-turnleft = False
 ########################################################################################
 # Functions
 ########################################################################################
 
-class Orientation(Enum):
-    UP = 0
-    LEFT = 1
-    DOWN = 2
-    RIGHT = 3
+class State(IntEnum):
+    greenLine = 0
+    wallFollow = 1
+    purpleLine = 2
+    orangePillar = 3
+    elevator = 4
+    cone = 5
+    train = 6
+    orangePlate = 7
+    jump = 8
 
-#left_state = Orientation.LEFT
-#right_state = Orientation.RIGHT
+curState = State.greenLine
 
 def start():
     """
@@ -78,33 +69,47 @@ def start():
     # Have the car begin at a stop
     rc.drive.stop()
 
-    # Print start message
-    print(">> Lab 5 - AR Markers")
-
-
 def update():
     """
     After start() is run, this function is run every frame until the back button
     is pressed
     """
+    color_image = rc.camera.get_color_image()
+    markers = rc_utils.get_ar_markers(color_image)
+    ar_marker: ARMarker = None
+    
 
-    global speed, angle, linefollow, wallfollow, counter, turnleft, turnright
+    if len(markers) > 0:
+        ar_marker = markers[0]
 
-    if linefollow == True:
+    if ar_marker.getid() == :
+        curState = State.wallFollow
+    
+  
+    if curState == State.wallFollow:
+        wallFollow()
+    elif curState == State.purpleLine:
         followLine()
-    elif wallfollow == True:
-        followWall2()  
-    if turnright == True:
-        turn_right()
-    elif turnleft == True:
-        turn_left()
-    
-    
-    #print("angle" + str(angle))
-    #print(counter)
-    
+    elif currState == State.orangePillar:
+        slalomPillars()
+    elif curState == State.elevator:
+        parkInElevator()
+    elif curState == State.cone:
+        coneSlalom()
+    elif curState == State.train:
+        avoidTrains()
+    elif curState == State.orangePlate:
+        avoidPlate()
+    elif curState == State.jump:
+        bigJump()
     rc.drive.set_speed_angle(speed, angle)
 
+
+
+
+    
+def wallFollow():
+    
 
 def update_contour(order2):
     """
@@ -113,7 +118,7 @@ def update_contour(order2):
     """
     global contour_center
     global contour_area
-    global order
+
     image = rc.camera.get_color_image()
 
     if image is None:
@@ -122,7 +127,7 @@ def update_contour(order2):
     else:
 
         image = rc_utils.crop(image, CROP_FLOOR[0], CROP_FLOOR[1])
-        color = order2
+        color = GREEN
         for x in color:
             contours = rc_utils.find_contours(image, x[0], x[1])
             if len(contours) != 0:
@@ -153,32 +158,8 @@ def followLine():
         angle = rc_utils.remap_range(contour_center[1],0,imgX,-1,1)
     speed = 1
 
-def turn_right():
-    global counter, angle, speed, wallfollow
-
-    if counter < 0.7:
-        counter += rc.get_delta_time()
-        angle = 1
-        speed = 1
-    else:
-        wallfollow = True
-
-def turn_left():
-    
-    global counter, angle, wallfollow, speed
-       
-    if counter < 0.7:
-        counter += rc.get_delta_time()
-        angle = -1
-        speed = 1
-
-    else:
-        wallfollow = True
-
-    
 
 def followWall2():
-    
     global speed,angle, linefollow, wallfollow, counter, turnright, turnleft, order 
     scan = rc.lidar.get_samples()
     pid = PID(0.01, 0.1, 0.1, setpoint=0)
@@ -262,6 +243,7 @@ def followWall2():
                 counter=  0
                 wallfollow = False
                 turnright = True
+    
 
     
 ########################################################################################
