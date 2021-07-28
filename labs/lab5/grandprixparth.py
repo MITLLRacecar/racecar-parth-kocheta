@@ -41,6 +41,7 @@ potential_colors = [
 BLUE = ((88,245,199), (108,255,255))
 RED = ((0, 50, 50), (20, 255, 255))#(175, 50, 50), (10, 255, 255))#
 GREEN = ((40, 60, 60), (90, 255, 255)) #(40, 50, 50), (80, 255, 255)
+ORANGE = ((3, 174, 78), (23, 194, 158), "ORANGE")
 WHITE = ((90, 20, 200), (115, 60, 255))
 CROP_FLOOR = ((360, 0), (rc.camera.get_height(), rc.camera.get_width()))
 
@@ -62,6 +63,7 @@ turnleft = False
 firstLoop = True
 firstTurn = True
 cur_side = "START"
+
 
 straight = False
 ########################################################################################
@@ -97,15 +99,15 @@ def update():
     global speed, angle, wallfollow, counter, turnleft, turnright, firstLoop, firstTurn, cur_side, straight
     
   
-    if wallfollow == True:
-        followWall2()  
-    if turnright == True:
-        turn_right()
-    elif turnleft == True:
-        turn_left()
-    elif straight == True:
-        straight()
-    
+    # if wallfollow == True:
+    #     followWall2()  
+    # if turnright == True:
+    #     turn_right()
+    # if turnleft == True:
+    #     turn_left()
+    # if straight == True:
+    #     straight()
+    slalom()
     #print("angle" + str(angle))
     #print(counter)
     print(angle)
@@ -113,13 +115,14 @@ def update():
 
 
 def turn_right():
-    global counter, angle, speed, wallfollow
+    global counter, angle, speed, wallfollow, turnright
 
     if counter < 1.1:
         counter += rc.get_delta_time()
         angle = 0.7
         speed = 1
     else:
+        turnright = False
         wallfollow = True
 
 def turn_left():
@@ -149,7 +152,7 @@ def straight():
 
 def followWall2():
     
-    global speed,angle, linefollow, wallfollow, counter, turnright, turnleft, order, firstLoop, firstTurn, cur_side, straight
+    global speed,angle, linefollow, wallfollow, counter, turnright, turnleft, order, firstLoop, firstTurn, cur_side, straight, ar_marker
     scan = rc.lidar.get_samples()
     pid = PID(0.01, 0.1, 0.1, setpoint=0)
     pid.output_limits = (-1.5, 1.5)
@@ -202,7 +205,7 @@ def followWall2():
             firstLoop = False
         
     elif (marker is not None and marker.get_id() == 199 ) :
-        print(marker.get_orientation().value)
+        #print(marker.get_orientation().value)
   
         if marker.get_orientation().value == 1  :
             cur_side = "LEFT" 
@@ -259,6 +262,125 @@ def followWall2():
                 turnleft = True
 
     print(cur_side)
+
+
+
+def slalom():
+    #update_contour()
+
+    global speed, angle
+    
+    color_image = rc.camera.get_color_image()
+    depth_image = rc.camera.get_depth_image()
+
+    markers = rc_utils.get_ar_markers(color_image)
+    
+    ar_marker: ARMarker = None
+    
+    if len(markers) > 0:
+        ar_marker = markers[0]
+        corners = ar_marker.get_corners()
+        centerx = (corners[0][0] + corners[3][0]) //2
+        centery= (corners[0][1] + corners[3][1]) //2 
+    
+    
+    targetPoint = rc.camera.get_width() / 2   
+    if ar_marker is not None:
+        curr_side = ar_marker.get_orientation().value
+        if ar_marker.get_id() == 199: #and contour_center is not None:
+            if curr_side == 1: #left
+                centerOfMarker = corners[3][1] + corners[0][1] // 2
+                targetPoint = centerOfMarker - 225
+            elif curr_side == 3:
+                centerOfMarker = corners[0][1] + corners[3][1] // 2
+                targetPoint = centerOfMarker + 225
+            angle = rc_utils.remap_range(targetPoint, 0, rc.camera.get_width(), -1, 1)
+            # if contour_distance > 145:
+            #     angle = -0.16
+            #     speed = 1.4
+        else:
+            if curr_side == 1:
+                angle = 0.33
+            elif curr_side == 3:
+                angle = -0.33
+    speed = 1.4
+        
+        
+        # if contour_center is not None:
+        #     if marker.get_orientation().value == 3:
+        #         targetPoint = contour_center[1] + 60
+        #     point = rc_utils.remap_range(contour_distance, 50, 300, 0, color_img_x // 2, True)
+        #     #speed = rc_utils.remap_range(contour_distance,30, 120,0.7,1,True,)
+        #     speed = 1.4
+        #     angle = rc_utils.remap_range(contour_center[1], point, color_img_x //2 , 0 ,1 ,True)
+        #     if contour_distance > 145:
+        #         angle = 0.16
+        #         speed = 1.4
+        # else:
+        #     angle = -0.33
+        #     speed = 1.4
+
+
+
+
+
+
+
+
+def update_contour():
+    """
+    Finds contours in the current color image and uses them to update contour_center
+    and contour_area
+    """
+    global contour_center
+    global contour_area
+    global cur_color
+    global contour_distance
+
+    image = rc.camera.get_color_image()
+    depth_image = rc.camera.get_depth_image()
+    depth_image_adjust = (depth_image - 0.01) % 9999
+    depth_image_adjust_blur = cv.GaussianBlur(depth_image_adjust, (11,11), 0)
+
+    contour = None
+
+    if image is None:
+        contour_center = None
+        contour_area = 0
+    else:
+
+        orange_contours = rc_utils.find_contours(image, ORANGE[0], ORANGE[1])
+
+        largest_orange_contour = rc_utils.get_largest_contour(orange_contours, MIN_CONTOUR_AREA)
+
+        if largest_orange_contour is not None:
+            largest_orange_contour_area = rc_utils.get_contour_area(largest_orange_contour)
+        else:
+            largest_orange_contour_area = 0
+        
+        contour = largest_orange_contour
+        
+        if contour is not None:
+            # Calculate contour information
+            contour_center = rc_utils.get_contour_center(contour)
+            contour_area = rc_utils.get_contour_area(contour)
+
+            contour_center_x = rc_utils.clamp(contour_center[0], 0, 639)
+            contour_center_y = rc_utils.clamp(contour_center[1], 0, 479)
+
+            contour_distance = rc_utils.get_pixel_average_distance(depth_image_adjust_blur, contour_center)
+
+            # Draw contour onto the image
+            rc_utils.draw_contour(image, contour)
+            rc_utils.draw_circle(image, contour_center)
+
+        else:
+            contour_center = None
+            contour_area = 0
+            #contour_distance = 0
+        # Display the image to the screen
+        rc.display.show_color_image(image)
+
 ########################################################################################
 # DO NOT MODIFY: Register start and update and begin execution
 ########################################################################################
