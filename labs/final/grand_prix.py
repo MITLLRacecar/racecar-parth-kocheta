@@ -166,7 +166,7 @@ def update():
         if elevator_end is True:
             curState = State.greenLine
     elif curState == State.purpleLine:
-        canyonLineFollowing()#arColorGlobal)
+        newCanyon()#arColorGlobal)
 
         
     # elif curState == State.jump:
@@ -430,14 +430,15 @@ def newCanyon():#arColor):
     
     #update_contour(arColor)
 
-    quarterImgWidth = rc.camera.get_width() // 4
+    quarterImgWidth = rc.camera.get_width() *3 // 4
 
     if contour_center is not None:
-        center = rc_utils.clamp(contour_center[1], int(0.75 * quarterImgWidth), quarterImgWidth)
-        angle = rc_utils.remap_range(center, int(0.75 * quarterImgWidth), quarterImgWidth, -1, 1)
+        center = rc_utils.clamp(contour_center[1], int(0.7 * quarterImgWidth), quarterImgWidth)
+        angle = rc_utils.remap_range(center, int(0.5 * quarterImgWidth), quarterImgWidth, -1, 1)
            
     else: 
-        angle = 1
+        speed = 0.3
+        angle = 0.5
 
 # def finalStageLineFollowing():
 #     global speed
