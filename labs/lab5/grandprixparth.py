@@ -97,17 +97,19 @@ def update():
     """
 
     global speed, angle, wallfollow, counter, turnleft, turnright, firstLoop, firstTurn, cur_side, straight
+
     
-  
-    # if wallfollow == True:
-    #     followWall2()  
-    # if turnright == True:
-    #     turn_right()
-    # if turnleft == True:
-    #     turn_left()
-    # if straight == True:
-    #     straight()
-    slalom()
+    
+    if wallfollow == True:
+        orangeColumns()  
+    if turnright == True:
+         turn_right()
+    if turnleft == True:
+        turn_left()
+    if straight == True:
+        straight2()
+    
+    #slalom()
     #print("angle" + str(angle))
     #print(counter)
     print(angle)
@@ -115,42 +117,51 @@ def update():
 
 
 def turn_right():
-    global counter, angle, speed, wallfollow, turnright
-
-    if counter < 1.1:
+    global counter, angle, speed, wallfollow, turnright, cur_side
+        
+  
+    if counter < 1.45:
         counter += rc.get_delta_time()
-        angle = 0.7
+        angle = 0.55
         speed = 1
     else:
+
         turnright = False
         wallfollow = True
+        cur_side = "RIGHT"
 
 def turn_left():
     
-    global counter, angle, wallfollow, speed
-       
-    if counter < 1.1:
+    global counter, angle, wallfollow, speed, cur_side, turnleft
+
+        
+     
+    if counter < 1.45:
         counter += rc.get_delta_time()
-        angle = -0.7
+        angle = -0.55
         speed = 1
 
     else:
+        turnleft  = False
         wallfollow = True
+        cur_side = "LEFT"
 
     
-def straight():
-    global counter, angle, wallfollow, speed
+def straight2():
+
+    global counter, angle, wallfollow, speed, straight
        
-    if counter < 1:
+    if counter < 2.4:
         counter += rc.get_delta_time()
         angle = 0
         speed = 1
 
     else:
+        straight = False
         wallfollow = True
 
 
-def followWall2():
+def orangeColumns():
     
     global speed,angle, linefollow, wallfollow, counter, turnright, turnleft, order, firstLoop, firstTurn, cur_side, straight, ar_marker
     scan = rc.lidar.get_samples()
@@ -204,15 +215,15 @@ def followWall2():
         else: 
             firstLoop = False
         
-    elif (marker is not None and marker.get_id() == 199 ) :
-        #print(marker.get_orientation().value)
+    # elif (marker is not None and marker.get_id() == 199 ) and marker_distance < 70:
+    #     #print(marker.get_orientation().value)
   
-        if marker.get_orientation().value == 1  :
-            cur_side = "LEFT" 
+    #     if marker.get_orientation().value == 1  :
+    #         cur_side = "LEFT" 
         
 
-        elif marker.get_orientation().value ==3 :
-            cur_side = "RIGHT" 
+    #     elif marker.get_orientation().value ==3 :
+    #         cur_side = "RIGHT" 
        
 
     if firstTurn == True and front_dist < 100:
@@ -221,22 +232,23 @@ def followWall2():
             firstTurn = False
             if marker.get_orientation().value == 1  :
                     print("first turn left")
-                    counter =  0.7
+                    counter =  0.6
                     wallfollow = False  
                     turnleft = True
                     firstTurn = False
-                    
+                    #cur_side = "LEFT"
                     #angle = -1
             elif marker.get_orientation().value ==3 :
                     print("first turn right")
-                    counter=  0.7
+                    counter=  0.6
                     wallfollow = False
                     turnright = True
                     firstTurn = False
+                    #cur_side = "RIGHT"
                    
 
     
-    elif cur_side != "START" and firstTurn == False:
+    elif  firstTurn == False:
         if marker is not None:
             if cur_side == "LEFT" and marker.get_orientation().value == 1 :
                 print("going straight on left")
@@ -246,7 +258,7 @@ def followWall2():
                 
             elif cur_side == "LEFT" and marker.get_orientation().value == 3:
                 print("wide right turn")
-                counter=  0
+                counter =  0
                 wallfollow = False
                 turnright = True   
             elif  cur_side == "RIGHT" and marker.get_orientation().value == 3:

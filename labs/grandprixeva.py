@@ -312,7 +312,46 @@ def parkInElevator():
 #     else: 
 #         marker_distance = 9999
     
+def avoidTrains():
+    global speed
+    depth_image = rc.camera.get_depth_image()
+    color_image = rc.camera.get_color_image()
 
+    # leftDepth = depth_image[rc.camera.get_height() // 2, rc.camera.get_width() // 3] #1/4
+    # middleDepth = depth_image[rc.camera.get_height() // 2, rc.camera.get_width() // 2] #1/2
+    # rightDepth = depth_image[rc.camera.get_height() // 2, 2 * rc.camera.get_width() // 3] #3/4
+
+    scan = rc.lidar.get_samples_async()
+    leftDepth = rc_utils.get_lidar_average_distance(scan, -25, 5)
+    middleDepth = rc_utils.get_lidar_average_distance(scan, 0, 5)
+    rightDepth = rc_utils.get_lidar_average_distance(scan, 25, 5)
+    farLeft = rc_utils.get_lidar_average_distance(scan, -45, 5)
+    farRight = rc_utils.get_lidar_average_distance(scan, 45, 5)
+    closestAngle, closestDistance = rc_utils.get_lidar_closest_point(scan, (-30, 30))
+    
+    print(f"{leftDepth}, {middleDepth}, {rightDepth}")
+    print(closestDistance)
+    # update_contour(((109, 175, 77), (129, 195, 157)), color_image)
+    # if closestDistance > 200:
+    #     speed = 1
+    # if closestDistance < 50:
+    #     speed = -0.2
+    # else:
+    # if farLeft > 40 and farRight > 40:
+    #     speed = rc_utils.remap_range(closestDistance, 50, 250, 0, 0.8)
+        # speed = -0.5
+    # else:
+    #     speed = -0.8
+    #     if leftDepth >= 80 or rightDepth >= 80:
+    #         speed = 0.8
+    if closestDistance < 50:
+        speed = 0
+    if closestDistance < 200 and closestDistance > 50:
+        speed = rc_utils.remap_range(closestDistance, 50, 250, 0, 0.8)
+    elif closestDistance > 200:
+        speed = 1
+    elif closestDistance < 50:
+        speed = 0
     
 ########################################################################################
 # DO NOT MODIFY: Register start and update and begin execution
