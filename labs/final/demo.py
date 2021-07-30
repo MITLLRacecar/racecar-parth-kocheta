@@ -60,39 +60,29 @@ def observation():
 
     state = int(lidar_data_str, 2)
   
-    
+    #print(state)
     
 
     return (state)
     
 
 
-def save(table):
-    np.savetxt('values.csv', table, delimiter=",", fmt="%d")
-
 
 def start():
     print("RL Project")
     global speed, angle
-    global done
     
-    global count
     rc.drive.stop()
-    done = True
-    count = 0
 
 def update():
-
-   
         
         
     global action, speed, angle
 
-    state = observation() #function to return state, reward, and done/not done
+    state = observation() 
         
 
-
-    action = np.argmax(q_table[state]) # Exploit learned values
+    action = np.argmax(q_table[state]) 
 
     speed = .5
     if action == 0:

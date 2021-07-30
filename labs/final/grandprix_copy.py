@@ -9,9 +9,6 @@ Grand Prix 2021
 ########################################################################################
 # Imports
 ########################################################################################
-
-#from labs.lab4.lab4b import DRIVE_SPEED, LEFT_WINDOW
-#from labs.lab4.lab4b import FRONT_WINDOW
 import sys
 import cv2 as cv
 import numpy as np
@@ -57,9 +54,6 @@ BACK_WINDOW_LIDAR = (170, 190)
 
 ### CROPPED IMAGE ###
 CROP_FLOOR = ((360, 0), (rc.camera.get_height(), rc.camera.get_width()))
-
-
-
 
 potential_colors = [BLUE, RED, GREEN]
 potential_colors_markers = [PURPLEMARKER, ORANGEMARKER]
@@ -128,7 +122,7 @@ class State(IntEnum):
     orangePillar = 8
     nothing = 9
     greenLineFast = 10
-
+    greenLineSlow = 11
 curState = State.greenLineFast
 
 ### Initialization ###
@@ -178,7 +172,7 @@ def update():
 
     if ar_marker is not None and marker_distance != 0.0: 
         
-        if marker_distance < 70:
+        if marker_distance < 80:
             if ar_marker.get_id() == 0:
                 if wall_follow_end is False:
                     curState = State.wallFollow
@@ -187,20 +181,24 @@ def update():
                     wallfollow = True
            
             
-            # elif ar_marker.get_id() == 5:
-            #     curState = State.train
+            elif ar_marker.get_id() == 5:
+                 curState = State.greenLineFast
 
             elif ar_marker.get_id() == 6:
-                curState = State.orangePlate
+                curState = curState = State.greenLine 
 
-            # elif ar_marker.get_id() == 8:
-            #     curState = State.jump
+            elif ar_marker.get_id() == 8:
+                curState = State.greenLineFast
 
+            
         if ar_marker.get_id() == 3:
             curState = State.elevator
         
+        elif ar_marker.get_id() == 7:
+                curState = State.greenLineFast
+
         if marker_distance < 60 and ar_marker.get_id() == 4:
-            curState = State.cone   
+            curState = State.greenLineSlow
         elif ar_marker.get_id() == 1:
                 speed = 0.5
                 curState = State.purpleLine
@@ -226,7 +224,8 @@ def update():
         cone()
         if cone_end is True:
             curState = State.greenLine
-        
+    elif curState == State.greenLineSlow:
+        followLineSlow()       
     elif curState == State.purpleLine:
         newCanyon(arColorGlobal)
         speed = 0.75
@@ -237,10 +236,8 @@ def update():
         followLine()
 
             
-    # elif curState == State.jump:
-    #     finalStageLineFollowing()
-    #     if final_jump_end is True:
-    #         curState = State.greenLine
+    elif curState == State.jump:
+        curState = State.greenLineFast
 
     if wallfollow == True:
         orangeColumns()
@@ -256,7 +253,7 @@ def update():
             orange_pillar_end = False
 
         
-    #print(angle)
+    print(curState)
     rc.drive.set_speed_angle(speed, angle)
 
 def update_contour(color):
@@ -287,34 +284,18 @@ def update_contour(color):
             contour_area = 0
     #rc.display.show_color_image(image)
     
-### Follows green line - Default state ###
-def update_contour3(color, image):
-    """
-    Finds contours in the current color image and uses them to update contour_center
-    and contour_area
-    """
-    global contour_center
-    global contour_area
 
-    
-    if image is None:
-        contour_center = None
-        contour_area = 0
-    else:
-        image = rc_utils.crop(image, CROP_FLOOR[0], CROP_FLOOR[1])
+def followLineSlow():
+    global speed
+    global angle
+   
+    update_contour(GREEN)
+    imgX = rc.camera.get_width()
 
-        contours = rc_utils.find_contours(image, color[0], color[1])
-        contour = rc_utils.get_largest_contour(contours, MIN_CONTOUR_AREA)
+    if contour_center is not None:
+        angle = rc_utils.remap_range(contour_center[1],0,imgX,-1,1)
 
-        if contour is not None:
-            contour_center = rc_utils.get_contour_center(contour)
-            contour_area = rc_utils.get_contour_area(contour)
-            rc_utils.draw_contour(image, contour)
-            rc_utils.draw_circle(image, contour_center)
-        else:
-            contour_center = None
-            contour_area = 0
-    #rc.display.show_color_image(image)
+    speed = 1.1
 
 def followLine():
     global speed
@@ -326,7 +307,8 @@ def followLine():
     if contour_center is not None:
         angle = rc_utils.remap_range(contour_center[1],0,imgX,-1,1)
 
-    speed = 1.0
+    speed = 1.35
+
 
 def followLineFast():
     global speed
@@ -338,44 +320,8 @@ def followLineFast():
     if contour_center is not None:
         angle = rc_utils.remap_range(contour_center[1],0,imgX,-1,1)
 
-    speed = 2
+    speed = 2.4
 
-def newCanyon3():#arColor):
-    global speed
-    global angle
-    global rightLine
-    global canyon_end
-    global image
-    #print(order)
-    speed = 1
-    image = rc.camera.get_color_image()
-    image = rc_utils.crop(image, (0, 5 * rc.camera.get_width() // 8), (rc.camera.get_height(), rc.camera.get_width()))
-    
-
-    update_contour3(ORANGELINE, image)
-    if contour_center is None:
-        update_contour3(PURPLELINE, image)
-        print("Following the purple line")
-    else:
-        print("Following the orange line")
-    
-    #update_contour(arColor)
-
-    quarterImgWidth = rc.camera.get_width() // 4
-
-    if contour_center is not None:
-        center = rc_utils.clamp(contour_center[1], int(0.05 * quarterImgWidth), quarterImgWidth)
-        angle = rc_utils.remap_range(center, int(0.05* quarterImgWidth), quarterImgWidth, -1.4, 1.4)
-           
-    else: 
-        print("Turning, no line found")
-        angle = 1
-
-    # update_contour(GREEN)
-    # # if contour_center is not None:
-    # #     canyon_end = True
-    # #     speed = 1.3
-        
 ### Wall Follow ###
 def wallFollow():
     global speed
@@ -481,8 +427,6 @@ def turn_right():
 def turn_left():
     
     global counter, angle, wallfollow, speed, cur_side, turnleft
-
-        
      
     if counter < 1.35:
         counter += rc.get_delta_time()
@@ -544,44 +488,8 @@ def update_contour_canyon(colorList, image, crop = True):
         else:
             contour_center = None
             contour_area = 0
-    rc.display.show_color_image(image)
+    #rc.display.show_color_image(image)
 
-def update_contour_canyon2(colorList, image, crop = False):
-    """
-    Finds contours in the current color image and uses them to update contour_center
-    and contour_area
-    """
-    global contour_center
-    global contour_area
-    global currentColor
-    global canyon_end
-    if image is None:
-        contour_center = None
-        contour_area = 0
-    else:
-        #print("in update cont")
-        if crop:
-            image = rc_utils.crop(image, CROP_FLOOR[0], CROP_FLOOR[1])
-        #rc.display.show_color_image(image)
-        for color in colorList:
-            contours = rc_utils.find_contours(image, color[0], color[1])
-            if len(contours) != 0:
-                break
-
-        contour = rc_utils.get_largest_contour(contours, MIN_CONTOUR_AREA)
-        if contour is not None:
-            print("found cont")
-            contour_center = rc_utils.get_contour_center(contour)
-            contour_area = rc_utils.get_contour_area(contour)
-            rc_utils.draw_contour(image, contour)
-            rc_utils.draw_circle(image, contour_center)
-            currentColor = color[2]
-            print(f"Current color: {currentColor}")
-            
-        else:
-            contour_center = None
-            contour_area = 0
-    rc.display.show_color_image(image)   
 
 def newCanyon(arColor):
     global speed
@@ -620,10 +528,6 @@ def newCanyon(arColor):
             update_contour_canyon([PURPLELINE, ORANGELINE], image)
         elif arColor == "PURPLE":
             update_contour_canyon([ORANGELINE, PURPLELINE], image)
-        # if arColor == "PURPLE":
-        #     update_contour([PURPLE, ORANGE])
-        # elif arColor == "ORANGE":
-        #     update_contour([ORANGE, PURPLE])
 
         imgWidth = rc.camera.get_width()
         halfImgWidth = imgWidth // 2
@@ -666,8 +570,8 @@ def newCanyon(arColor):
     
     #if no white, orange, or purple follow green
     update_contour(GREEN)   
-    print("contour are" + str(contour_area)) 
-    print("right line" + str(rightLine))
+    #contour are" + str(contour_area)) 
+    #print("right line" + str(rightLine))
     if contour_area !=0 and contour_center is not None and rightLine > 0:
         canyon_end = True
 
@@ -714,12 +618,6 @@ def orangeColumns():
     else: 
         marker_distance = 9999
 
-    #print(marker)
-    #angle  = rc_utils.clamp (diff_top * 0.02,-1.6,1.6)
-    # if marker is not None:
-    #print(marker)
-    
-    
 
     if (firstLoop):
         if front_dist > 125:
@@ -728,16 +626,6 @@ def orangeColumns():
         else: 
             firstLoop = False
         
-    # elif (marker is not None and marker.get_id() == 199 ) and marker_distance < 70:
-    #     #print(marker.get_orientation().value)
-  
-    #     if marker.get_orientation().value == 1  :
-    #         cur_side = "LEFT" 
-        
-
-    #     elif marker.get_orientation().value ==3 :
-    #         cur_side = "RIGHT" 
-       
 
     if firstTurn == True and front_dist < 100:
 
@@ -824,8 +712,8 @@ def update_contour_cone():
         red_contours = rc_utils.find_contours(image, RED_CONE[0], RED_CONE[1])
         blue_contours = rc_utils.find_contours(image, BLUE_CONE[0], BLUE_CONE[1])
 
-        largest_red_contour = rc_utils.get_largest_contour(red_contours, 80)
-        largest_blue_contour = rc_utils.get_largest_contour(blue_contours, 80)
+        largest_red_contour = rc_utils.get_largest_contour(red_contours, 100)
+        largest_blue_contour = rc_utils.get_largest_contour(blue_contours, 100)
 
         if largest_red_contour is not None:
             largest_red_contour_area = rc_utils.get_contour_area(largest_red_contour)
@@ -868,16 +756,13 @@ def update_contour_cone():
         else:
             contour_center = None
             contour_area = 0
-            #contour_distance = 0
-        # Display the image to the screen
-        rc.display.show_color_image(image)
-    
+
+
 def cone():
     """
     After start() is run, this function is run every frame until the back button
     is pressed
     """
-
     
     update_contour_cone()
 
@@ -889,6 +774,7 @@ def cone():
     global angle
     global cur_color
     global contour_distance
+    global contour_center
     global cone_counter
     global prev_color
     global time
@@ -899,21 +785,29 @@ def cone():
 
     color_img_x = rc.camera.get_width()
 
+    #print(cone_counter)
+
     if prev_color != cur_color:
         cone_counter += 1
         prev_color = cur_color
-    
+
+
+    if cone_counter == 1:
+        angle = 0.8
+
+    if contour_distance > 400:
+        contour_center = None
 
     if cur_color == 'BLUE':
         if contour_center is not None:
-            point = rc_utils.remap_range(contour_distance, 10, 300, color_img_x, color_img_x * 3 // 4 , True)
+            point = rc_utils.remap_range(contour_distance, 10, 1500, color_img_x, color_img_x * 3 // 4 , True)
             #speed = rc_utils.remap_range(contour_distance,30, 120,0.8,1,True,)
-            speed = 0.45
+            speed = 0.35
             if point ==  color_img_x // 2:
                 point = point + 0.001
-            angle = rc_utils.remap_range(contour_center[1], point, color_img_x // 2 , 0 ,-0.9 ,True)
-            if contour_distance > 145:
-                angle = -0.17
+            angle = rc_utils.remap_range(contour_center[1], point, color_img_x // 2 , 0 ,-0.5 ,True)
+           # if contour_distance > 115:
+           #     angle = -0.28
            
         # elif cur_color == 'RED':
         #     angle = 0.2 #0.32
@@ -921,29 +815,29 @@ def cone():
         # elif cur_color == None:
         #     angle = 0.5
         else:
-            angle = 0.3 
-            speed = 0.45
+            angle = 0.38 
+            speed = 0.35
     elif cur_color == 'RED':
         if contour_center is not None:
-            point = rc_utils.remap_range(contour_distance, 10, 550, 0, color_img_x // 2, True)
+            point = rc_utils.remap_range(contour_distance, 10, 1500, 0, color_img_x // 2, True)
             #speed = rc_utils.remap_range(contour_distance,30, 120,0.7,1,True,)
-            speed = 0.45
+            speed = 0.35
             if point ==  color_img_x // 2:
                 point = point + 0.001
-            angle = rc_utils.remap_range(contour_center[1], point, color_img_x // 2 , 0 ,0.9 ,True)
-            if contour_distance > 145:
+            angle = rc_utils.remap_range(contour_center[1], point, color_img_x // 2 , 0 ,0.5 ,True)
+         #   if contour_distance > 115:
                 
-                angle = 0.17
+          #      angle = 0.28
  
         #     angle = -0.2    #-0.32
         #     speed = 0.7
         # elif cur_color == None:
         #     angle = -0.5
         else:
-            angle = -0.3 
-            speed = 0.45
-
-    print(angle)   
+            angle = -0.38
+            speed = 0.35
+    print(angle)
+    #print(angle)   
         # elif cur_color == 'BLUE':
     #print(cone_counter)
     #print(cone_counter)
@@ -953,65 +847,7 @@ def cone():
     if contour_center is not None:
         cone_end = True
 
-# def finalStageLineFollowing():
-#     global speed
-#     global angle
-#     global rightLine
-#     global image, finalJump, counter
-#     global contour_center
-#     # global final_jump_end
-#     #print(order)
 
-#     update_contour(GREEN)
-#     image = rc.camera.get_color_image()
-#     print("RIGHT LINE: ", rightLine)
-#     image = rc_utils.crop(image, (0, 3 * rc.camera.get_width() // 4), (rc.camera.get_height(), rc.camera.get_width()))
-
-#     markers = rc_utils.get_ar_markers(image)
-#     ar_marker: ARMarker = None
-    
-#     #Check to see if there are any markers detected and grab the closest marker.
-#     if len(markers) > 0:
-#         ar_marker = markers[0]
-
-#     # rc.display.show_color_image(image)
-
-#     scan = rc.lidar.get_samples()
-#     _, left_dist = rc_utils.get_lidar_closest_point(scan, LEFT_WINDOW_LIDAR)
-#     _, right_dist = rc_utils.get_lidar_closest_point(scan, RIGHT_WINDOW_LIDAR)
-#     _, front_dist = rc_utils.get_lidar_closest_point(scan, FRONT_WINDOW_LIDAR)
-#     _, back_dist = rc_utils.get_lidar_closest_point(scan, BACK_WINDOW_LIDAR)
-
-#     update_contour_alt([BLUE], image)
-
-#     imgWidth = rc.camera.get_width()
-#     halfImgWidth = imgWidth // 2
-
-#     quarterImgWidth = rc.camera.get_width() // 4
-#     print(f"Front: {front_dist}   Back: {back_dist}")
-
-#     if counter > 18 and ((front_dist < 170 and back_dist > 145) or finalJump == True):
-#         print("final ramp")
-#         speed = 3
-#         angle = 0
-#         finalJump = True
-#     if finalJump == False:
-#         counter += rc.get_delta_time()
-#         print("Counter: ", counter)
-#         if contour_center is not None:
-#             print("Current Color: ", currentColor)
-
-#             centerClamped = rc_utils.clamp(contour_center[1], int(0.75 * quarterImgWidth), quarterImgWidth)
-#             angle = rc_utils.remap_range(centerClamped, int(0.75 * quarterImgWidth), quarterImgWidth, -1, 1)
-#             print("Angle: ", angle)
-#             speed = 1
-
-#         if contour_center is None:
-#             angle = 0.3
-#             speed = 1.0
-
-#     if contour_center is not None and ar_marker is None:
-#         final_jump_end = True
 ########################################################################################
 # DO NOT MODIFY: Register start and update and begin execution
 ########################################################################################

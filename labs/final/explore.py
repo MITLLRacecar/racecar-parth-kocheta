@@ -14,7 +14,7 @@ from IPython.display import clear_output
 
 rc = racecar_core.create_racecar()
 #lookup table, contains reward values initially at zero for every state-action combination
-q_table = np.zeros([64, 3])
+q_table = np.zeros([64, 5])
 
 MIN_DISTANCE = 50
 window_size = 15
@@ -33,29 +33,33 @@ all_penalties = []
 
 def observation():
     global done
-    
+    lidar_arr  = []
 
     scan = rc.lidar.get_samples()
-    first_dist = rc_utils.get_lidar_average_distance(scan, 285, window_size)
-    second_dist = rc_utils.get_lidar_average_distance(scan, 315, window_size)
-    third_dist = rc_utils.get_lidar_average_distance(scan, 345, window_size)
-    fourth_dist = rc_utils.get_lidar_average_distance(scan, 15, window_size)
-    fifth_dist = rc_utils.get_lidar_average_distance(scan, 45, window_size)
-    sixth_dist = rc_utils.get_lidar_average_distance(scan, 75, window_size)
+    
+    for i in range (270, 360):
+        lidar_arr.append(rc_utils.get_lidar_average_distance(scan, i , 2.5))
 
-    lidar_data = [0,0,0,0,0,0]
-    if (first_dist < MIN_DISTANCE):
-        lidar_data[0] = 1
-    if (second_dist < MIN_DISTANCE):
-        lidar_data[1] = 1
-    if (third_dist < MIN_DISTANCE):
-        lidar_data[2] = 1
-    if (fourth_dist < MIN_DISTANCE):
-        lidar_data[3] = 1
-    if (fifth_dist < MIN_DISTANCE):
-        lidar_data[4] = 1
-    if (sixth_dist < MIN_DISTANCE):
-        lidar_data[5] = 1
+    # first_dist = rc_utils.get_lidar_average_distance(scan, 285, window_size)
+    # second_dist = rc_utils.get_lidar_average_distance(scan, 315, window_size)
+    # third_dist = rc_utils.get_lidar_average_distance(scan, 345, window_size)
+    # fourth_dist = rc_utils.get_lidar_average_distance(scan, 15, window_size)
+    # fifth_dist = rc_utils.get_lidar_average_distance(scan, 45, window_size)
+    # sixth_dist = rc_utils.get_lidar_average_distance(scan, 75, window_size)
+
+    # lidar_data = [0,0,0,0,0,0]
+    # if (first_dist < MIN_DISTANCE):
+    #     lidar_data[0] = 1
+    # if (second_dist < MIN_DISTANCE):
+    #     lidar_data[1] = 1
+    # if (third_dist < MIN_DISTANCE):
+    #     lidar_data[2] = 1
+    # if (fourth_dist < MIN_DISTANCE):
+    #     lidar_data[3] = 1
+    # if (fifth_dist < MIN_DISTANCE):
+    #     lidar_data[4] = 1
+    # if (sixth_dist < MIN_DISTANCE):
+    #     lidar_data[5] = 1
     
     
     lidar_data_str = "".join(str(data) for data in lidar_data)
@@ -68,14 +72,15 @@ def observation():
     
     
 
-    if rc_utils.get_lidar_closest_point(scan)[1] < 20.5:
+    if rc_utils.get_lidar_closest_point(scan)[1] < 20.4:
         print("CRASHED")
         save(q_table)
         reward = -10
+        done = True
     else:
         reward = rc_utils.remap_range(abs(fifth_dist-second_dist), 0, 100, 4, -4, True)
-        done = True
-        print(reward)
+        done = False
+
     #print(rc_utils.get_lidar_closest_point(scan)[1])
     return (state, reward, done)
     
@@ -104,10 +109,11 @@ def update():
     global epochs, penalties
         # rc.drive.stop() - something to reset the environment
     if count < 10000:
+        
         if done:
             epochs, penalties, reward, = 0, 0, 0
             state = observation()[0]
-            action = 1
+            action = 2
             done = False
             count += 1
         
@@ -136,9 +142,14 @@ def update():
             if action == 0:
                 angle = -0.7
             elif action ==1:
-                angle = 0
+                angle = -0.3
             elif action == 2:
-                angle = 0.7 
+                angle = 0 
+            elif action ==3:
+                angle = 0.3
+            elif action == 4:
+                angle = .7
+
 
 
         if count % 5 == 0:
